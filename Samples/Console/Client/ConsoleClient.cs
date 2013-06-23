@@ -88,7 +88,7 @@ namespace Client
                 //for (int i = 0; i < 1e4; i++)
                 {
                     msg.Integer = msgId++;
-                    
+
                     // msg.String = RandomString(256);
                     if (!_clientSocket.Connected)
                     {
@@ -129,7 +129,7 @@ namespace Client
 
             for (int i = 0; i < size; i++)
             {
-                buffer[i] = Chars[_rng.Next(Chars.Length)];
+                buffer[i] = Chars[_rng.Next(Chars.Length - 1)];
             }
             return new string(buffer);
         }
