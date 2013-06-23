@@ -32,6 +32,7 @@ namespace BoltMQ.Core
         private readonly IDisposable _sendSubscribtion;
 
         public IStreamHandler StreamHandler { get; private set; }
+
         public SocketAsyncEventArgs ReceiveEventArgs { get { return _receiveEventArgs; } }
         public SocketAsyncEventArgs SendEventArgs { get { return _sendEventArgs; } }
 
@@ -55,10 +56,10 @@ namespace BoltMQ.Core
             _bytesRingBuffer = new BytesRingBuffer(64 * 1024);
 
             _receiveObservable = Observable.FromEventPattern<SocketAsyncEventArgs>(_receiveEventArgs, "Completed").Select(pattern => pattern.EventArgs);
-            _receiveSubscription = _receiveObservable.SubscribeOn(Scheduler.Default).Subscribe(OnReceiveCompleted);
+            _receiveSubscription = _receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnReceiveCompleted);
 
             _sendObservable = Observable.FromEventPattern<SocketAsyncEventArgs>(_sendEventArgs, "Completed").Select(pattern => pattern.EventArgs);
-            _sendSubscribtion = _sendObservable.Subscribe(OnSendCompleted);
+            _sendSubscribtion = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
         }
 
         private void OnReceiveCompleted(SocketAsyncEventArgs args)
@@ -95,8 +96,9 @@ namespace BoltMQ.Core
                     OnReceiveCompleted(args);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Trace.TraceError(ex.ToString());
                 ProcessError(args);
             }
         }

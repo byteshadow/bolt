@@ -81,7 +81,7 @@ namespace Client
         {
             Random random = new Random();
             RequestMessage msg = new RequestMessage();
-            //msg.String = RandomString(200);
+            //msg.String = RandomString(2000);
             int msgId = 0;
             while (!_cancellationToken.IsCancellationRequested)
             {
