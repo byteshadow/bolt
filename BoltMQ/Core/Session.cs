@@ -49,54 +49,16 @@ namespace BoltMQ.Core
             _receiveEventArgs = new SocketAsyncEventArgs { UserToken = this };
 
             _sendEventArgs = new SocketAsyncEventArgs { UserToken = this, RemoteEndPoint = socket.RemoteEndPoint };
-            
+
 
             _sendObservable = _sendEventArgs.ToObservable();
             _sendSubscribtion = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
         }
 
-        //#region Receive
-        //private void OnReceiveCompleted(SocketAsyncEventArgs args)
-        //{
-        //    if (args.BytesTransferred == 0)
-        //    {
-        //        Close(this);
-        //    }
-        //    else if (args.SocketError != SocketError.Success)
-        //    {
-        //        ProcessError(args);
-        //    }
-        //    else
-        //    {
-        //        ISession session = (ISession)args.UserToken;
-        //        var success = session.StreamHandler.ParseStream(args.Buffer, args.Offset, args.BytesTransferred);
-        //        if (success)
-        //            ReceiveAsync(args);
-        //        else
-        //        {
-        //            Close(this);
-        //        }
-        //    }
-        //}
-
-        //public void ReceiveAsync(SocketAsyncEventArgs args)
-        //{
-        //    ISession session = (ISession)args.UserToken;
-        //    try
-        //    {
-        //        bool willRaiseEvent = session.Socket.ReceiveAsync(args);
-        //        if (!willRaiseEvent)
-        //        {
-        //            OnReceiveCompleted(args);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Trace.TraceError(ex.ToString());
-        //        ProcessError(args);
-        //    }
-        //}
-        //#endregion
+        public void SetReceiveDisposable(IDisposable disposable)
+        {
+            _receiveSubscription = disposable;
+        }
 
         #region Send
         /// <summary>
@@ -112,7 +74,7 @@ namespace BoltMQ.Core
                 {
                     return Socket.Send(data);
                 }
-                
+
                 Trace.TraceError("Socket is closed. {0}", Socket.RemoteEndPoint);
                 throw new SocketException((int)SocketError.NotConnected);
             }
@@ -176,9 +138,13 @@ namespace BoltMQ.Core
             }
         }
 
-        public void SetReceiveDisposable(IDisposable disposable)
+        public void OnReceiveCompleted(Action<SocketAsyncEventArgs> onReceiveCompleted)
         {
-            _receiveSubscription = disposable;
+            //Observe the Receive Event Arg for incoming messages
+            IObservable<SocketAsyncEventArgs> receiveObservable = ReceiveEventArgs.ToObservable();
+
+            //Setup the subscription for the Receive Event
+            _receiveSubscription = receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(onReceiveCompleted);
         }
 
         private void OnSendCompleted(SocketAsyncEventArgs e)
@@ -245,8 +211,11 @@ namespace BoltMQ.Core
         {
             if (_disposed || !disposing) return;
 
-            _receiveSubscription.Dispose();
-            _sendSubscribtion.Dispose();
+            if (_receiveSubscription != null)
+                _receiveSubscription.Dispose();
+
+            if (_sendSubscribtion != null)
+                _sendSubscribtion.Dispose();
 
             _disposed = true;
         }

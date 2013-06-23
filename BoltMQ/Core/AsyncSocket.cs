@@ -132,13 +132,7 @@ namespace BoltMQ.Core
 
         protected void SetupSession(ISession session)
         {
-            //Observe the Receive Event Arg for incoming messages
-            IObservable<SocketAsyncEventArgs> receiveObservable = session.ReceiveEventArgs.ToObservable();
-
-            //Setup the subscription for the Receive Event
-            IDisposable receiveSubscription = receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnReceiveCompleted);
-
-            session.SetReceiveDisposable(receiveSubscription);
+            session.OnReceiveCompleted(OnReceiveCompleted);
         }
 
         private void OnReceiveCompleted(SocketAsyncEventArgs args)

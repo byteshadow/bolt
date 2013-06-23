@@ -17,6 +17,6 @@ namespace BoltMQ.Core.Interfaces
         void Close();
         int Send(byte[] byteMessage);
         void FlushSendBuffer();
-        void SetReceiveDisposable(IDisposable disposable);
+        void OnReceiveCompleted(Action<SocketAsyncEventArgs> onReceiveCompleted);
     }
 }
