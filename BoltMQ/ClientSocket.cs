@@ -21,7 +21,6 @@ namespace BoltMQ
             Initialize(messageProcessor);
         }
 
-        #region Overrides of AsyncSocket
         protected override IStreamHandler StreamHandlerFactory(Guid sessionId)
         {
             return StreamHandler ?? (StreamHandler = new StreamHandler(MessageProcessor, sessionId));
@@ -31,7 +30,7 @@ namespace BoltMQ
         {
             Guid sessionId = Guid.NewGuid();
             IStreamHandler streamHandler = StreamHandlerFactory(sessionId);
-            Session session = new Session(streamHandler, socket, sessionId);
+            ISession session = new Session(streamHandler, socket, sessionId);
             return session;
         }
 
@@ -46,6 +45,5 @@ namespace BoltMQ
         {
             Close();
         }
-        #endregion
     }
 }

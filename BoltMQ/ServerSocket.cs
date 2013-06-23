@@ -44,7 +44,7 @@ namespace BoltMQ
 
             IStreamHandler streamHandler = StreamHandlerFactory(sessionId);
 
-            Session session = new Session(streamHandler, socket, sessionId);
+            ISession session = new Session(streamHandler, socket, sessionId);
 
             return session;
         }

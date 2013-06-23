@@ -17,7 +17,8 @@ namespace BoltMQ
         public void OnMessageReceived(BoltEventArgs<T> e)
         {
             EventHandler<BoltEventArgs<T>> handler = MessageReceived;
-            if (handler != null) handler(this, e);
+            if (handler != null) 
+                handler(this, e);
         }
 
         public Type SubscribtionType

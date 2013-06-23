@@ -1,15 +1,11 @@
 using System;
 using System.Diagnostics;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Threading;
-using System.Threading.Tasks;
-using BoltMQ.Core.Collection;
+using BoltMQ.Core;
 using BoltMQ.Core.Interfaces;
 
 namespace BoltMQ
 {
-    public class StreamHandler : IStreamHandler
+    public class StreamHandler : Disposable, IStreamHandler
     {
         private readonly IMessageProcessor _messageProcessor;
         private readonly PayloadParser _payloadParser;
@@ -23,8 +19,6 @@ namespace BoltMQ
 
         public Guid SessionId { get; private set; }
 
-        #region Implementation of IStreamHandler
-
         public Exception StreamHandlerException { get; private set; }
 
         public bool ParseStream(byte[] buffer, int offset, int length)
@@ -32,7 +26,6 @@ namespace BoltMQ
             int initialOffset = offset;
             int currentOffset = offset;
             int remainingBytes = length - (currentOffset - initialOffset);
-
             try
             {
                 while (remainingBytes > 0)
@@ -58,14 +51,7 @@ namespace BoltMQ
                 return false;
             }
         }
-        #endregion
 
-        #region Implementation of IDisposable
-
-        public void Dispose()
-        {
-        }
-
-        #endregion
+        public override void OnDispose() { }
     }
 }
