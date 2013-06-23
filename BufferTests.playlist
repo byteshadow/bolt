@@ -1,0 +1,1 @@
+<Playlist Version="1.0"><Add Test="BoltMQ.Tests.RingBufferTest.GivenAnEmptyBuffer_FreeBytesShouldBeTheSizeOfTheBuffer" /><Add Test="BoltMQ.Tests.RingBufferTest.GivenAnHalfEmptyBufferFreeBytesShouldBeTheHalfTheSizeOfTheBuffer" /></Playlist>
