@@ -170,7 +170,7 @@ namespace BoltMQ.Core
             {
                 Interlocked.Increment(ref _numConnectedSockets);
 
-                var connection = ConnectionFactory(asyncEvent.AcceptSocket);
+                var connection = SessionFactory(asyncEvent.AcceptSocket);
                 // assign a byte buffer from the buffer pool to the SocketAsyncEventArg objects
                 _receiveBufferPool.SetBuffer(connection.ReceiveEventArgs);
 
@@ -201,8 +201,6 @@ namespace BoltMQ.Core
 
             return false;
         }
-
-       
 
         /// <summary>
         /// Closes the socket
@@ -236,5 +234,7 @@ namespace BoltMQ.Core
 
             Bind(localEndPoint);
         }
+
+        public abstract void SendAsync<T>(T message, Guid sessionId);
     }
 }

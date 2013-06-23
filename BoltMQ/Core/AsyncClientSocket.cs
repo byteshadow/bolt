@@ -66,7 +66,7 @@ namespace BoltMQ.Core
 
         private void ProcessConnect()
         {
-            _session = ConnectionFactory(_connectEventArgs.ConnectSocket);
+            _session = SessionFactory(_connectEventArgs.ConnectSocket);
             _receiveBufferPool.SetBuffer(_session.ReceiveEventArgs);
             _session.OnDisconnected += SessionDisconnected;
 

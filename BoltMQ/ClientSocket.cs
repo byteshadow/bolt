@@ -32,7 +32,7 @@ namespace BoltMQ
             return StreamHandler ?? (StreamHandler = new StreamHandler(MessageProcessor, sessionId));
         }
 
-        protected override ISession ConnectionFactory(Socket socket)
+        protected override ISession SessionFactory(Socket socket)
         {
             var sessionId = Guid.NewGuid();
             return new Session(StreamHandlerFactory(sessionId),socket, sessionId);

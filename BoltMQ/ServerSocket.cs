@@ -33,7 +33,7 @@ namespace BoltMQ
             base.Initialize(messageProcessor);
         }
 
-        protected override ISession ConnectionFactory(Socket socket)
+        protected override ISession SessionFactory(Socket socket)
         {
             var sessionId = Guid.NewGuid();
 
@@ -68,18 +68,27 @@ namespace BoltMQ
 
         public List<IStreamHandler> StreamHandlers { get; private set; }
 
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public override void SendAsync<T>(T message)
         {
             foreach (KeyValuePair<Guid, ISession> activeConnection in ActiveConnections)
             {
                 MessageProcessor.SendAsync(message, activeConnection.Value);
             }
+        }
+
+        public override void SendAsync<T>(T message, Guid sessionId)
+        {
+            ISession session;
+            if (ActiveConnections.TryGetValue(sessionId, out session))
+            {
+                MessageProcessor.SendAsync(message, session);
+            }
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void Dispose(bool dispose)
@@ -96,13 +105,6 @@ namespace BoltMQ
             Dispose(!_disposed);
         }
 
-        public void SendAsync<T>(T message, Guid sessionId)
-        {
-            ISession session;
-            if (ActiveConnections.TryGetValue(sessionId, out session))
-            {
-                MessageProcessor.SendAsync(message, session);
-            }
-        }
+       
     }
 }

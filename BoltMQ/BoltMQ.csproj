@@ -60,6 +60,7 @@
     <Compile Include="Core\Collection\RingBuffer.cs" />
     <Compile Include="Core\Collection\RingBufferBase.cs" />
     <Compile Include="Core\Collection\RingBufferItem.cs" />
+    <Compile Include="Core\Extentions.cs" />
     <Compile Include="Core\Session.cs" />
     <Compile Include="Core\Exceptions\BufferLengthException.cs" />
     <Compile Include="Core\Exceptions\InCompleteBufferException.cs" />
@@ -75,14 +76,12 @@
     <Compile Include="Core\Interfaces\ISerializer.cs" />
     <Compile Include="Core\Interfaces\IStreamHandler.cs" />
     <Compile Include="Core\BoltEventArgs.cs" />
-    <Compile Include="Core\Pool.cs" />
     <Compile Include="Core\Collection\BytesRingBuffer.cs" />
     <Compile Include="Frame.cs" />
     <Compile Include="FrameSegement.cs" />
     <Compile Include="MessageAttribute.cs" />
     <Compile Include="PayloadParser.cs" />
     <Compile Include="Serializer.cs" />
-    <Compile Include="BlockingStreamHandler.cs" />
     <Compile Include="ClientSocket.cs" />
     <Compile Include="ServerSocket.cs" />
     <Compile Include="MessageBroker.cs" />

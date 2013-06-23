@@ -28,7 +28,6 @@ namespace BoltMQ.Core
         public SocketType SocketType { get; set; }
         public ProtocolType ProtocolType { get; set; }
         public Socket Socket { get; protected set; }
-
         public IMessageProcessor MessageProcessor { get; protected set; }
         protected int SendBufferSize { get; set; }
 
@@ -47,7 +46,7 @@ namespace BoltMQ.Core
         /// This Session factory returns a NEW ISession object when called
         /// </summary>
         /// <returns> a new <see cref="ISession"/> object</returns>
-        protected abstract ISession ConnectionFactory(Socket socket);
+        protected abstract ISession SessionFactory(Socket socket);
 
         public abstract void Close();
 
