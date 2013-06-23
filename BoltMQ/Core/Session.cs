@@ -13,20 +13,18 @@ namespace BoltMQ.Core
         public event EventHandler<ISession> OnDisconnected;
 
         private volatile bool _isSending;
-
-        private readonly SocketAsyncEventArgs _receiveEventArgs;
-        private readonly SocketAsyncEventArgs _sendEventArgs;
-
         private readonly BytesRingBuffer _outgoingBuffer;
-
-        private readonly object _syncSendObject = new object();
-        readonly AutoResetEvent _freeSpaceHandler = new AutoResetEvent(false);
+        private readonly SocketAsyncEventArgs _sendEventArgs;
+        private readonly SocketAsyncEventArgs _receiveEventArgs;
 
         private IDisposable _receiveSubscription;
-
+        private readonly IDisposable _sendSubscription;
         private readonly IObservable<SocketAsyncEventArgs> _sendObservable;
-        private readonly IDisposable _sendSubscribtion;
 
+        private readonly object _syncSendObject = new object();
+        private readonly AutoResetEvent _freeSpaceHandler = new AutoResetEvent(false);
+
+        #region Properties
         public IStreamHandler StreamHandler { get; private set; }
         public SocketAsyncEventArgs ReceiveEventArgs { get { return _receiveEventArgs; } }
         public SocketAsyncEventArgs SendEventArgs { get { return _sendEventArgs; } }
@@ -36,6 +34,7 @@ namespace BoltMQ.Core
             get { return Socket != null && Socket.Connected; }
         }
         public Socket Socket { get; private set; }
+        #endregion
 
         public Session(IStreamHandler streamHandler, Socket socket, Guid sessionId)
         {
@@ -44,14 +43,11 @@ namespace BoltMQ.Core
             StreamHandler = streamHandler;
 
             _outgoingBuffer = new BytesRingBuffer(64 * 1024);
-
             _receiveEventArgs = new SocketAsyncEventArgs { UserToken = this };
-
             _sendEventArgs = new SocketAsyncEventArgs { UserToken = this, RemoteEndPoint = socket.RemoteEndPoint };
 
-
             _sendObservable = _sendEventArgs.ToObservable();
-            _sendSubscribtion = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
+            _sendSubscription = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
         }
 
         public void SetReceiveDisposable(IDisposable disposable)
@@ -119,7 +115,7 @@ namespace BoltMQ.Core
             lock (_syncSendObject)
             {
                 int bytesRead;
-                var buffer = _outgoingBuffer.ReadAll(out bytesRead);
+                byte[] buffer = _outgoingBuffer.ReadAll(out bytesRead);
 
                 if (bytesRead == 0)
                 {
@@ -135,15 +131,6 @@ namespace BoltMQ.Core
                 if (!willRaiseEvent)
                     OnSendCompleted(_sendEventArgs);
             }
-        }
-
-        public void OnReceiveCompleted(Action<SocketAsyncEventArgs> onReceiveCompleted)
-        {
-            //Observe the Receive Event Arg for incoming messages
-            IObservable<SocketAsyncEventArgs> receiveObservable = ReceiveEventArgs.ToObservable();
-
-            //Setup the subscription for the Receive Event
-            _receiveSubscription = receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(onReceiveCompleted);
         }
 
         private void OnSendCompleted(SocketAsyncEventArgs e)
@@ -163,6 +150,15 @@ namespace BoltMQ.Core
             }
         }
         #endregion
+
+        public void OnReceiveCompleted(Action<SocketAsyncEventArgs> onReceiveCompleted)
+        {
+            //Observe the Receive Event Arg for incoming messages
+            IObservable<SocketAsyncEventArgs> receiveObservable = ReceiveEventArgs.ToObservable();
+
+            //Setup the subscription for the Receive Event
+            _receiveSubscription = receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(onReceiveCompleted);
+        }
 
         private void ProcessError(SocketAsyncEventArgs args)
         {
@@ -204,8 +200,8 @@ namespace BoltMQ.Core
             if (_receiveSubscription != null)
                 _receiveSubscription.Dispose();
 
-            if (_sendSubscribtion != null)
-                _sendSubscribtion.Dispose();
+            if (_sendSubscription != null)
+                _sendSubscription.Dispose();
         }
     }
 }
