@@ -17,5 +17,6 @@ namespace BoltMQ.Core.Interfaces
 
         void Close();
         void SendAsync<T>(T message);
+        void ReceiveAsync(SocketAsyncEventArgs args);
     }
 }

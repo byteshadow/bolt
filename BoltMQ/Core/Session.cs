@@ -23,8 +23,7 @@ namespace BoltMQ.Core
         private readonly object _syncSendObject = new object();
         readonly AutoResetEvent _freeSpaceHandler = new AutoResetEvent(false);
 
-        private readonly IObservable<SocketAsyncEventArgs> _receiveObservable;
-        private readonly IDisposable _receiveSubscription;
+        private IDisposable _receiveSubscription;
 
         private readonly IObservable<SocketAsyncEventArgs> _sendObservable;
         private readonly IDisposable _sendSubscribtion;
@@ -44,60 +43,60 @@ namespace BoltMQ.Core
             SessionId = sessionId;
             Socket = socket;
             StreamHandler = streamHandler;
-            _receiveEventArgs = new SocketAsyncEventArgs { UserToken = this };
-            _sendEventArgs = new SocketAsyncEventArgs { UserToken = this, RemoteEndPoint = socket.RemoteEndPoint };
 
             _outgoingBuffer = new BytesRingBuffer(64 * 1024);
 
-            _receiveObservable = _receiveEventArgs.ToObservable();
-            _receiveSubscription = _receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnReceiveCompleted);
+            _receiveEventArgs = new SocketAsyncEventArgs { UserToken = this };
+
+            _sendEventArgs = new SocketAsyncEventArgs { UserToken = this, RemoteEndPoint = socket.RemoteEndPoint };
+            
 
             _sendObservable = _sendEventArgs.ToObservable();
             _sendSubscribtion = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
         }
 
-        #region Receive
-        private void OnReceiveCompleted(SocketAsyncEventArgs args)
-        {
-            if (args.BytesTransferred == 0)
-            {
-                Close(this);
-            }
-            else if (args.SocketError != SocketError.Success)
-            {
-                ProcessError(args);
-            }
-            else
-            {
-                ISession session = (ISession)args.UserToken;
-                var success = session.StreamHandler.ParseStream(args.Buffer, args.Offset, args.BytesTransferred);
-                if (success)
-                    ReceiveAsync(args);
-                else
-                {
-                    Close(this);
-                }
-            }
-        }
+        //#region Receive
+        //private void OnReceiveCompleted(SocketAsyncEventArgs args)
+        //{
+        //    if (args.BytesTransferred == 0)
+        //    {
+        //        Close(this);
+        //    }
+        //    else if (args.SocketError != SocketError.Success)
+        //    {
+        //        ProcessError(args);
+        //    }
+        //    else
+        //    {
+        //        ISession session = (ISession)args.UserToken;
+        //        var success = session.StreamHandler.ParseStream(args.Buffer, args.Offset, args.BytesTransferred);
+        //        if (success)
+        //            ReceiveAsync(args);
+        //        else
+        //        {
+        //            Close(this);
+        //        }
+        //    }
+        //}
 
-        public void ReceiveAsync(SocketAsyncEventArgs args)
-        {
-            ISession session = (ISession)args.UserToken;
-            try
-            {
-                bool willRaiseEvent = session.Socket.ReceiveAsync(args);
-                if (!willRaiseEvent)
-                {
-                    OnReceiveCompleted(args);
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError(ex.ToString());
-                ProcessError(args);
-            }
-        }
-        #endregion
+        //public void ReceiveAsync(SocketAsyncEventArgs args)
+        //{
+        //    ISession session = (ISession)args.UserToken;
+        //    try
+        //    {
+        //        bool willRaiseEvent = session.Socket.ReceiveAsync(args);
+        //        if (!willRaiseEvent)
+        //        {
+        //            OnReceiveCompleted(args);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Trace.TraceError(ex.ToString());
+        //        ProcessError(args);
+        //    }
+        //}
+        //#endregion
 
         #region Send
         /// <summary>
@@ -136,7 +135,7 @@ namespace BoltMQ.Core
                 {
                     //Slow consumer
                     Trace.TraceError("Slow consumer detected. Closing Socket to {0}.", Socket.RemoteEndPoint);
-                    Close(this);
+                    Close();
                 }
                 else
                 {
@@ -177,6 +176,11 @@ namespace BoltMQ.Core
             }
         }
 
+        public void SetReceiveDisposable(IDisposable disposable)
+        {
+            _receiveSubscription = disposable;
+        }
+
         private void OnSendCompleted(SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
@@ -195,7 +199,6 @@ namespace BoltMQ.Core
         }
         #endregion
 
-
         private void ProcessError(SocketAsyncEventArgs args)
         {
             ISession session = args.UserToken as ISession;
@@ -206,18 +209,16 @@ namespace BoltMQ.Core
             }
 
             if (session != null)
-                Close(session);
+                Close();
         }
 
-        public void Close(ISession session)
+        public void Close()
         {
-            if (session == null || session.Socket == null) return;
-
-            var socket = session.Socket;
+            if (Socket == null) return;
 
             try
             {
-                socket.Shutdown(SocketShutdown.Send);
+                Socket.Shutdown(SocketShutdown.Send);
             }
             catch
             {
@@ -225,12 +226,12 @@ namespace BoltMQ.Core
             }
             finally
             {
-                socket.Close();
+                Socket.Close();
 
                 var local = OnDisconnected;
 
                 if (local != null)
-                    local(null, session);
+                    local(null, this);
             }
         }
 

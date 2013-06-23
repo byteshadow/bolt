@@ -42,7 +42,7 @@ namespace BoltMQ
         {
             if (!Connected) return;
 
-            Session.Close(Session);
+            Session.Close();
 
             Socket.Close();
         }

@@ -70,7 +70,7 @@ namespace BoltMQ
 
         public override void SendAsync<T>(T message)
         {
-            foreach (KeyValuePair<Guid, ISession> activeConnection in ActiveConnections)
+            foreach (KeyValuePair<Guid, ISession> activeConnection in ActiveSessions)
             {
                 MessageProcessor.SendAsync(message, activeConnection.Value);
             }
@@ -79,7 +79,7 @@ namespace BoltMQ
         public override void SendAsync<T>(T message, Guid sessionId)
         {
             ISession session;
-            if (ActiveConnections.TryGetValue(sessionId, out session))
+            if (ActiveSessions.TryGetValue(sessionId, out session))
             {
                 MessageProcessor.SendAsync(message, session);
             }

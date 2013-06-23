@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Text;
 using BoltMQ.Core.Interfaces;
 
@@ -14,7 +17,6 @@ namespace BoltMQ.Core
         protected BufferPool _receiveBufferPool;
 
         #region Properties
-
         /// <summary>
         /// The buffer size allocated to each socket
         /// </summary>
@@ -23,14 +25,12 @@ namespace BoltMQ.Core
         /// The port number the socket is bound to
         /// </summary>
         public int Port { get; set; }
-
         public AddressFamily AddressFamily { get; set; }
         public SocketType SocketType { get; set; }
         public ProtocolType ProtocolType { get; set; }
         public Socket Socket { get; protected set; }
         public IMessageProcessor MessageProcessor { get; protected set; }
         protected int SendBufferSize { get; set; }
-
         #endregion
 
         #region abstract methods
@@ -54,7 +54,6 @@ namespace BoltMQ.Core
         {
             MessageProcessor = messageProcessor;
         }
-
         #endregion
 
         /// <summary>
@@ -130,5 +129,71 @@ namespace BoltMQ.Core
         #endregion
 
         public abstract void SendAsync<T>(T message);
+
+        protected void SetupSession(ISession session)
+        {
+            //Observe the Receive Event Arg for incoming messages
+            IObservable<SocketAsyncEventArgs> receiveObservable = session.ReceiveEventArgs.ToObservable();
+
+            //Setup the subscription for the Receive Event
+            IDisposable receiveSubscription = receiveObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnReceiveCompleted);
+
+            session.SetReceiveDisposable(receiveSubscription);
+        }
+
+        private void OnReceiveCompleted(SocketAsyncEventArgs args)
+        {
+            if (args.BytesTransferred == 0)
+            {
+                ISession session = (ISession)args.UserToken;
+                session.Close();
+            }
+            else if (args.SocketError != SocketError.Success)
+            {
+                ProcessError(args);
+            }
+            else
+            {
+                ISession session = (ISession)args.UserToken;
+                var success = session.StreamHandler.ParseStream(args.Buffer, args.Offset, args.BytesTransferred);
+                if (success)
+                    ReceiveAsync(args);
+                else
+                {
+                    session.Close();
+                }
+            }
+        }
+
+        public void ReceiveAsync(SocketAsyncEventArgs args)
+        {
+            ISession session = (ISession)args.UserToken;
+            try
+            {
+                bool willRaiseEvent = session.Socket.ReceiveAsync(args);
+                if (!willRaiseEvent)
+                {
+                    OnReceiveCompleted(args);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+                ProcessError(args);
+            }
+        }
+
+        private void ProcessError(SocketAsyncEventArgs args)
+        {
+            ISession session = args.UserToken as ISession;
+
+            if (session != null && session.StreamHandler != null && session.StreamHandler.StreamHandlerException != null)
+            {
+                Trace.TraceError(session.StreamHandler.StreamHandlerException.ToString());
+            }
+
+            if (session != null)
+                session.Close();
+        }
     }
 }

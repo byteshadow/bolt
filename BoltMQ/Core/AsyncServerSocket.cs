@@ -13,7 +13,7 @@ namespace BoltMQ.Core
     public abstract class AsyncServerSocket : AsyncSocket, IAsyncServerSocket
     {
         private bool _initialized;
-        private ConcurrentDictionary<Guid, ISession> _activeConnections;
+        private ConcurrentDictionary<Guid, ISession> _activeSessions;
         private Semaphore _maxNumberAcceptedClients;
         private int _numConnectedSockets;
 
@@ -24,7 +24,7 @@ namespace BoltMQ.Core
 
         public int ActiveConnectionsCount { get { return _numConnectedSockets; } }
 
-        protected ConcurrentDictionary<Guid, ISession> ActiveConnections { get { return _activeConnections; } }
+        protected ConcurrentDictionary<Guid, ISession> ActiveSessions { get { return _activeSessions; } }
 
         /// <summary>
         /// Initializes the socket with the parameters set
@@ -61,7 +61,7 @@ namespace BoltMQ.Core
             //The Semaphore controls how many clients can connect at a time, this will be the number defined by the MaxConnection Property
             _maxNumberAcceptedClients = new Semaphore(MaxConnections, MaxConnections);
 
-            _activeConnections = new ConcurrentDictionary<Guid, ISession>();
+            _activeSessions = new ConcurrentDictionary<Guid, ISession>();
 
             // Associate the socket with the local endpoint.
             Socket.Bind(ipEndPoint);
@@ -170,13 +170,14 @@ namespace BoltMQ.Core
             {
                 Interlocked.Increment(ref _numConnectedSockets);
 
-                var connection = SessionFactory(asyncEvent.AcceptSocket);
+                ISession session = SessionFactory(asyncEvent.AcceptSocket);
+                SetupSession(session);
                 // assign a byte buffer from the buffer pool to the SocketAsyncEventArg objects
-                _receiveBufferPool.SetBuffer(connection.ReceiveEventArgs);
+                _receiveBufferPool.SetBuffer(session.ReceiveEventArgs);
 
-                _activeConnections.TryAdd(connection.SessionId, connection);
+                _activeSessions.TryAdd(session.SessionId, session);
 
-                connection.ReceiveAsync(connection.ReceiveEventArgs);
+                ReceiveAsync(session.ReceiveEventArgs);
             }
 
             // Accept the next Session request
@@ -193,9 +194,9 @@ namespace BoltMQ.Core
 
         public bool Send<T>(T message, Guid sessionId)
         {
-            if (_activeConnections.ContainsKey(sessionId))
+            if (_activeSessions.ContainsKey(sessionId))
             {
-                MessageProcessor.Send(message, _activeConnections[sessionId]);
+                MessageProcessor.Send(message, _activeSessions[sessionId]);
                 return true;
             }
 
@@ -207,10 +208,10 @@ namespace BoltMQ.Core
         /// </summary>
         public override void Close()
         {
-            //close all the connections
-            foreach (var activeConnection in _activeConnections)
+            //close all the sessions
+            foreach (ISession activeSession in _activeSessions.Values)
             {
-                activeConnection.Value.Close(activeConnection.Value);
+                activeSession.Close();
             }
             Socket.Close();
         }
