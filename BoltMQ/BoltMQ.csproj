@@ -64,7 +64,6 @@
     <Compile Include="Core\Exceptions\BufferLengthException.cs" />
     <Compile Include="Core\Exceptions\InCompleteBufferException.cs" />
     <Compile Include="Core\Exceptions\NullBufferException.cs" />
-    <Compile Include="Core\Interfaces\ConnectionTypes.cs" />
     <Compile Include="Core\Interfaces\IAsyncClientSocket.cs" />
     <Compile Include="Core\Interfaces\IAsyncServerSocket.cs" />
     <Compile Include="Core\Interfaces\IAsyncSocket.cs" />

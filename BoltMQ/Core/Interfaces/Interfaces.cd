@@ -1,13 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
-  <Interface Name="BoltMQ.Core.Interfaces.IAsyncClientSocket" Collapsed="true">
+  <Interface Name="BoltMQ.Core.Interfaces.IAsyncClientSocket">
     <Position X="6.25" Y="3" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAgAAAAAAAEAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAAAgAAQQAAAEAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Core\Interfaces\IAsyncClientSocket.cs</FileName>
     </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Session" />
+    </ShowAsAssociation>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.IAsyncServerSocket" Collapsed="true">
+  <Interface Name="BoltMQ.Core.Interfaces.IAsyncServerSocket">
     <Position X="8.5" Y="3" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAgAAAAAAAAAAAAEAAAAAACAAIAAAAAAAAAAAAAAA=</HashCode>
@@ -17,7 +20,7 @@
   <Interface Name="BoltMQ.Core.Interfaces.IAsyncSocket" Collapsed="true">
     <Position X="7.5" Y="1.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAgBAAAAAAAABAAAAAAAAQAAEAAgAACAAAE=</HashCode>
+      <HashCode>AABAAAAAAAgBAAAAAAAABAAAAAAAAQAAEAAgAACAAAE=</HashCode>
       <FileName>Core\Interfaces\IAsyncSocket.cs</FileName>
     </TypeIdentifier>
   </Interface>
@@ -28,54 +31,54 @@
       <FileName>Core\Interfaces\IBufferPool.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.IConnection" Collapsed="true">
-    <Position X="12.75" Y="1.75" Width="1.5" />
+  <Interface Name="BoltMQ.Core.Interfaces.ISession">
+    <Position X="3.5" Y="3.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AABAAAIAAAAAAABAAAAAAAAIAAAACQAABBAAAACAAQA=</HashCode>
-      <FileName>Core\Interfaces\IConnection.cs</FileName>
+      <HashCode>AABAAAIAAAAAAABAAEAAAAAIAAAAAQBABBAAAACAAQA=</HashCode>
+      <FileName>Core\Interfaces\ISession.cs</FileName>
     </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="StreamHandler" />
+    </ShowAsAssociation>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.IDistributor" Collapsed="true">
-    <Position X="14.5" Y="1.75" Width="1.5" />
+  <Interface Name="BoltMQ.Core.Interfaces.IMessageBroker">
+    <Position X="11.25" Y="5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAACAAAAAAAAAAAAAAAACAAAAQAAAAAAAAAA=</HashCode>
-      <FileName>Core\Interfaces\IDistributor.cs</FileName>
+      <FileName>Core\Interfaces\IMessageBroker.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="BoltMQ.Core.Interfaces.IMessage" Collapsed="true">
-    <Position X="11" Y="2.5" Width="1.5" />
+    <Position X="12.75" Y="1.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Core\Interfaces\IMessage.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.IMessageProcessor" Collapsed="true">
-    <Position X="12.75" Y="2.5" Width="1.5" />
+  <Interface Name="BoltMQ.Core.Interfaces.IMessageProcessor">
+    <Position X="11.25" Y="2.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAACAAAkgAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AABAAAAAIAAAACAAAkAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Core\Interfaces\IMessageProcessor.cs</FileName>
     </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="MessageBroker" />
+      <Property Name="Serializer" />
+    </ShowAsAssociation>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.ISerializer" Collapsed="true">
-    <Position X="14.5" Y="2.5" Width="1.5" />
+  <Interface Name="BoltMQ.Core.Interfaces.ISerializer">
+    <Position X="13.75" Y="2.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACBAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Core\Interfaces\ISerializer.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Interface Name="BoltMQ.Core.Interfaces.IStreamHandler" Collapsed="true">
-    <Position X="11" Y="3.25" Width="1.5" />
+  <Interface Name="BoltMQ.Core.Interfaces.IStreamHandler">
+    <Position X="6.5" Y="5.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAEAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAIAAAAAAAQAIAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Core\Interfaces\IStreamHandler.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Enum Name="BoltMQ.Core.Interfaces.ConnectionTypes" Collapsed="true">
-    <Position X="11" Y="4.25" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAEAAAA=</HashCode>
-      <FileName>Core\Interfaces\ConnectionTypes.cs</FileName>
-    </TypeIdentifier>
-  </Enum>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>
