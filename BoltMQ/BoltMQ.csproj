@@ -60,6 +60,7 @@
     <Compile Include="Core\Collection\RingBuffer.cs" />
     <Compile Include="Core\Collection\RingBufferBase.cs" />
     <Compile Include="Core\Collection\RingBufferItem.cs" />
+    <Compile Include="Core\Disposable.cs" />
     <Compile Include="Core\Extentions.cs" />
     <Compile Include="Core\Session.cs" />
     <Compile Include="Core\Exceptions\BufferLengthException.cs" />

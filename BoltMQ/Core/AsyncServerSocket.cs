@@ -73,7 +73,7 @@ namespace BoltMQ.Core
             AcceptAsync(null);
         }
 
-        private static int GetNetworkInterfaceMtu(IPEndPoint ipEndPoint)
+        public static int GetNetworkInterfaceMtu(IPEndPoint ipEndPoint)
         {
             IEnumerable<NetworkInterface> networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
             NetworkInterfaceComponent ipType = ipEndPoint.AddressFamily == AddressFamily.InterNetworkV6
@@ -100,11 +100,9 @@ namespace BoltMQ.Core
                                     case NetworkInterfaceComponent.IPv4:
                                         var ipV4Props = adapterProperties.GetIPv4Properties();
                                         return ipV4Props.Mtu;
-                                        break;
                                     case NetworkInterfaceComponent.IPv6:
                                         var ipV6Props = adapterProperties.GetIPv6Properties();
                                         return ipV6Props.Mtu;
-                                        break;
                                     default:
                                         throw new ArgumentOutOfRangeException();
                                 }
@@ -122,8 +120,10 @@ namespace BoltMQ.Core
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="session"></param>
-        protected void SessionClosed(object sender, ISession session)
+        protected override void OnSessionDisconnected(object sender, ISession session)
         {
+            base.OnSessionDisconnected(sender, session);
+
             // decrement the counter keeping track of the total number of clients connected to the server
             Interlocked.Decrement(ref _numConnectedSockets);
 
@@ -162,18 +162,17 @@ namespace BoltMQ.Core
             }
         }
 
-        private void ProcessAccept(SocketAsyncEventArgs asyncEvent)
+        private void ProcessAccept(SocketAsyncEventArgs acceptSocketAsyncEventArgs)
         {
-            Debug.Assert(asyncEvent != null, "ayncEvent != null");
+            Debug.Assert(acceptSocketAsyncEventArgs != null, "ayncEvent != null");
 
-            if (asyncEvent.AcceptSocket.Connected)
+            if (acceptSocketAsyncEventArgs.AcceptSocket.Connected)
             {
                 Interlocked.Increment(ref _numConnectedSockets);
 
-                ISession session = SessionFactory(asyncEvent.AcceptSocket);
+                ISession session = SessionFactory(acceptSocketAsyncEventArgs.AcceptSocket);
+
                 SetupSession(session);
-                // assign a byte buffer from the buffer pool to the SocketAsyncEventArg objects
-                _receiveBufferPool.SetBuffer(session.ReceiveEventArgs);
 
                 _activeSessions.TryAdd(session.SessionId, session);
 
@@ -181,7 +180,7 @@ namespace BoltMQ.Core
             }
 
             // Accept the next Session request
-            AcceptAsync(asyncEvent);
+            AcceptAsync(acceptSocketAsyncEventArgs);
         }
 
         private void OnCompleted(object sender, SocketAsyncEventArgs e)
@@ -213,6 +212,7 @@ namespace BoltMQ.Core
             {
                 activeSession.Close();
             }
+
             Socket.Close();
         }
 

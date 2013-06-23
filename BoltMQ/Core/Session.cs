@@ -8,12 +8,11 @@ using BoltMQ.Core.Interfaces;
 using System.Reactive.Linq;
 namespace BoltMQ.Core
 {
-    public class Session : ISession
+    public class Session : Disposable, ISession
     {
         public event EventHandler<ISession> OnDisconnected;
 
-        private bool _disposed;
-        private volatile bool _isSending = false;
+        private volatile bool _isSending;
 
         private readonly SocketAsyncEventArgs _receiveEventArgs;
         private readonly SocketAsyncEventArgs _sendEventArgs;
@@ -195,34 +194,18 @@ namespace BoltMQ.Core
                 Socket.Close();
 
                 var local = OnDisconnected;
-
                 if (local != null)
                     local(null, this);
             }
         }
 
-        #region Cleanup
-        public void Dispose()
+        public override void OnDispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        private void Dispose(bool disposing)
-        {
-            if (_disposed || !disposing) return;
-
             if (_receiveSubscription != null)
                 _receiveSubscription.Dispose();
 
             if (_sendSubscribtion != null)
                 _sendSubscribtion.Dispose();
-
-            _disposed = true;
         }
-        ~Session()
-        {
-            Dispose(false);
-        }
-        #endregion
     }
 }

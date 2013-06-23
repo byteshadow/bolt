@@ -7,10 +7,9 @@ namespace BoltMQ
 {
     public sealed class ClientSocket : AsyncClientSocket
     {
-        private bool _disposed;
+        public IStreamHandler StreamHandler { get; private set; }
 
-        public ClientSocket()
-            : this(new MessageBroker(), new Serializer()) { }
+        public ClientSocket() : this(new MessageBroker(), new Serializer()) { }
 
         public ClientSocket(IMessageBroker messageBroker, ISerializer serializer)
             : this(new MessageProcessor(messageBroker, serializer)) { }
@@ -19,14 +18,10 @@ namespace BoltMQ
         {
             SocketType = SocketType.Stream;
             ProtocolType = ProtocolType.Tcp;
-
             Initialize(messageProcessor);
         }
 
         #region Overrides of AsyncSocket
-
-        public IStreamHandler StreamHandler { get; private set; }
-
         protected override IStreamHandler StreamHandlerFactory(Guid sessionId)
         {
             return StreamHandler ?? (StreamHandler = new StreamHandler(MessageProcessor, sessionId));
@@ -34,8 +29,10 @@ namespace BoltMQ
 
         protected override ISession SessionFactory(Socket socket)
         {
-            var sessionId = Guid.NewGuid();
-            return new Session(StreamHandlerFactory(sessionId),socket, sessionId);
+            Guid sessionId = Guid.NewGuid();
+            IStreamHandler streamHandler = StreamHandlerFactory(sessionId);
+            Session session = new Session(streamHandler, socket, sessionId);
+            return session;
         }
 
         public override void Close()
@@ -43,28 +40,11 @@ namespace BoltMQ
             if (!Connected) return;
 
             Session.Close();
-
-            Socket.Close();
         }
 
-        public override void Dispose()
+        public override void OnDispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool dispose)
-        {
-            if (_disposed || !dispose) return;
-
             Close();
-
-            _disposed = true;
-        }
-
-        ~ClientSocket()
-        {
-            Dispose(false);
         }
         #endregion
     }

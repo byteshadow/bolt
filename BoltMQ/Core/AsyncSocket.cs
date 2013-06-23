@@ -2,14 +2,12 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using System.Text;
 using BoltMQ.Core.Interfaces;
 
 namespace BoltMQ.Core
 {
-    public abstract class AsyncSocket : IAsyncSocket
+    public abstract class AsyncSocket : Disposable, IAsyncSocket
     {
         public const int DefaultNumOfConnections = 10;
         public const int DefaultBufferSize = 8192;
@@ -34,22 +32,19 @@ namespace BoltMQ.Core
         #endregion
 
         #region abstract methods
-
         /// <summary>
         /// This returns a NEW <see cref="IStreamHandler"/> object
         /// </summary>
         /// <param name="sessionId"> </param>
         /// <returns><see cref="IStreamHandler"/></returns>
         protected abstract IStreamHandler StreamHandlerFactory(Guid sessionId);
-
         /// <summary>
         /// This Session factory returns a NEW ISession object when called
         /// </summary>
         /// <returns> a new <see cref="ISession"/> object</returns>
         protected abstract ISession SessionFactory(Socket socket);
-
         public abstract void Close();
-
+        public abstract void SendAsync<T>(T message);
         protected virtual void Initialize(IMessageProcessor messageProcessor)
         {
             MessageProcessor = messageProcessor;
@@ -122,17 +117,20 @@ namespace BoltMQ.Core
             _receiveBufferPool = new BufferPool(maxConnections, Socket.ReceiveBufferSize);
         }
 
-        #region Implementation of IDisposable
-
-        public abstract void Dispose();
-
-        #endregion
-
-        public abstract void SendAsync<T>(T message);
-
         protected void SetupSession(ISession session)
         {
             session.OnReceiveCompleted(OnReceiveCompleted);
+
+            // assign a byte buffer from the buffer pool to the SocketAsyncEventArg objects
+            _receiveBufferPool.SetBuffer(session.ReceiveEventArgs);
+
+            //Subscribe to the disconnect event
+            session.OnDisconnected += OnSessionDisconnected;
+        }
+
+        protected virtual void OnSessionDisconnected(object sender, ISession e)
+        {
+            e.OnDisconnected -= OnSessionDisconnected;
         }
 
         private void OnReceiveCompleted(SocketAsyncEventArgs args)
@@ -177,7 +175,7 @@ namespace BoltMQ.Core
             }
         }
 
-        private void ProcessError(SocketAsyncEventArgs args)
+        private static void ProcessError(SocketAsyncEventArgs args)
         {
             ISession session = args.UserToken as ISession;
 

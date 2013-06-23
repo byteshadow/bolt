@@ -67,11 +67,8 @@ namespace BoltMQ.Core
         private void ProcessConnect()
         {
             _session = SessionFactory(_connectEventArgs.ConnectSocket);
+
             SetupSession(_session);
-
-            _receiveBufferPool.SetBuffer(_session.ReceiveEventArgs);
-
-            _session.OnDisconnected += SessionDisconnected;
 
             Connected = true;
 
@@ -80,13 +77,13 @@ namespace BoltMQ.Core
             _connectResetEvent.Set();
         }
 
-        private void SessionDisconnected(object sender, ISession session)
+        protected override void OnSessionDisconnected(object sender, ISession e)
         {
-            session.OnDisconnected -= SessionDisconnected;
+            base.OnSessionDisconnected(sender, e);
 
             Connected = false;
 
-            if (session.SendEventArgs.SocketError == SocketError.ConnectionAborted)
+            if (e.SendEventArgs.SocketError == SocketError.ConnectionAborted)
                 Connect(_remoteIPEndPoint);
         }
 
@@ -94,6 +91,7 @@ namespace BoltMQ.Core
         {
             MessageProcessor.Send(message, _session);
         }
+
         public override void SendAsync<T>(T message)
         {
             MessageProcessor.SendAsync(message, _session);

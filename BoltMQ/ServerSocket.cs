@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using BoltMQ.Core;
 using BoltMQ.Core.Interfaces;
 
@@ -11,8 +9,6 @@ namespace BoltMQ
 {
     public class ServerSocket : AsyncServerSocket
     {
-        private bool _disposed;
-
         public ServerSocket()
             : this(8192, DefaultNumOfConnections)
         {
@@ -33,37 +29,37 @@ namespace BoltMQ
             base.Initialize(messageProcessor);
         }
 
+        protected override IStreamHandler StreamHandlerFactory(Guid sessionId)
+        {
+            var streamHandler = new StreamHandler(MessageProcessor, sessionId);
+            
+            StreamHandlers.Add(streamHandler);
+
+            return streamHandler;
+        }
+
         protected override ISession SessionFactory(Socket socket)
         {
-            var sessionId = Guid.NewGuid();
+            Guid sessionId = Guid.NewGuid();
 
-            Session session = new Session(StreamHandlerFactory(sessionId), socket, sessionId);
+            IStreamHandler streamHandler = StreamHandlerFactory(sessionId);
 
-            session.OnDisconnected += SessionDisconnected;
+            Session session = new Session(streamHandler, socket, sessionId);
 
             return session;
         }
 
-        private void SessionDisconnected(object sender, ISession e)
+        protected override void OnSessionDisconnected(object sender, ISession e)
         {
-            e.OnDisconnected -= SessionDisconnected;
-
-            SessionClosed(sender, e);
+            base.OnSessionDisconnected(sender, e);
 
             var streamHandler = StreamHandlers.FirstOrDefault(s => s.SessionId == e.SessionId);
+
             if (streamHandler != null)
             {
                 streamHandler.Dispose();
                 StreamHandlers.Remove(streamHandler);
             }
-        }
-
-        protected override IStreamHandler StreamHandlerFactory(Guid sessionId)
-        {
-            var streamHandler = new StreamHandler(MessageProcessor, sessionId);
-            //var streamHandler = new BlockingStreamHandler(MessageProcessor, sessionId);
-            StreamHandlers.Add(streamHandler);
-            return streamHandler;
         }
 
         public List<IStreamHandler> StreamHandlers { get; private set; }
@@ -85,26 +81,9 @@ namespace BoltMQ
             }
         }
 
-        public override void Dispose()
+        public override void OnDispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool dispose)
-        {
-            if (_disposed || !dispose) return;
-
             Close();
-
-            _disposed = true;
-        }
-
-        ~ServerSocket()
-        {
-            Dispose(!_disposed);
-        }
-
-       
+        }       
     }
 }
