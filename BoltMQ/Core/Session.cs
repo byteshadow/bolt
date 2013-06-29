@@ -11,6 +11,7 @@ namespace BoltMQ.Core
     public class Session : Disposable, ISession
     {
         public event EventHandler<ISession> OnDisconnected;
+        public event EventHandler<byte[]> OnSendAsync;
 
         private volatile bool _isSending;
         private readonly BytesRingBuffer _outgoingBuffer;
@@ -48,14 +49,36 @@ namespace BoltMQ.Core
 
             _sendObservable = _sendEventArgs.ToObservable();
             _sendSubscription = _sendObservable.SubscribeOn(ThreadPoolScheduler.Instance).Subscribe(OnSendCompleted);
-        }
 
-        public void SetReceiveDisposable(IDisposable disposable)
-        {
-            _receiveSubscription = disposable;
+            IObservable<byte[]> dataToSend = Observable.FromEventPattern<byte[]>(this, "OnSendAsync").Select(pattern => pattern.EventArgs);
+
+            dataToSend.Subscribe(data =>
+                {
+                    if (_outgoingBuffer.FreeBytes >= data.Length)
+                    {
+                        WriteToSendBuffer(data);
+                    }
+                    else
+                    {
+                        _outgoingBuffer.NotifyFreeSpace(data.Length, _freeSpaceHandler);
+
+                        if (!_freeSpaceHandler.WaitOne(5000) && _outgoingBuffer.FreeBytes < data.Length)
+                        {
+                            //Slow consumer
+                            Trace.TraceError("Slow consumer detected. Closing Socket to {0}.", Socket.RemoteEndPoint);
+                            Close();
+                        }
+                        else
+                        {
+                            WriteToSendBuffer(data);
+                        }
+                    }
+                });
+
         }
 
         #region Send
+        //TODO: THIS IS A HACK!!! REFACTOR THE WHOLE OF SEND/SENDASYNC
         /// <summary>
         /// This will block the current thread untill the data has been sent or an error is reported
         /// </summary>
@@ -80,34 +103,32 @@ namespace BoltMQ.Core
             if (!IsConnected)
                 throw new SocketException((int)SocketError.NotConnected);
 
-            if (_outgoingBuffer.FreeBytes >= data.Length)
+            var local = OnSendAsync;
+            if (local != null)
             {
-                WriteToSendBuffer(data);
+                local(null, data);
             }
             else
             {
-                _outgoingBuffer.NotifyFreeSpace(data.Length, _freeSpaceHandler);
-
-                if (!_freeSpaceHandler.WaitOne(5000) && _outgoingBuffer.FreeBytes < data.Length)
-                {
-                    //Slow consumer
-                    Trace.TraceError("Slow consumer detected. Closing Socket to {0}.", Socket.RemoteEndPoint);
-                    Close();
-                }
-                else
-                {
-                    WriteToSendBuffer(data);
-                }
+                Send(data);
             }
         }
+
+        private int _pendingMsgs;
 
         private void WriteToSendBuffer(byte[] data)
         {
             if (!_outgoingBuffer.Write(data, 0, data.Length))
+            {
                 Trace.TraceError("Ensure there is only one Buffer writer at any given time.");
+            }
+            else
+            {
+                Interlocked.Increment(ref _pendingMsgs);
 
-            if (!_isSending)
-                FlushSendBuffer();
+                if (!_isSending)
+                    FlushSendBuffer();
+            }
         }
 
         public void FlushSendBuffer()
@@ -115,14 +136,27 @@ namespace BoltMQ.Core
             lock (_syncSendObject)
             {
                 int bytesRead;
-                byte[] buffer = _outgoingBuffer.ReadAll(out bytesRead);
 
-                if (bytesRead == 0)
+                int preReadMsgs = Interlocked.Exchange(ref _pendingMsgs, 0);
+                byte[] buffer = _outgoingBuffer.ReadAll(out bytesRead);
+                int postReadMsgs = Interlocked.Exchange(ref _pendingMsgs, 0);
+
+                if (bytesRead == 0 && preReadMsgs == postReadMsgs && preReadMsgs == 0)
                 {
                     _isSending = false;
                     return;
                 }
+                if (bytesRead == 0 && postReadMsgs != preReadMsgs)
+                {
+                    buffer = _outgoingBuffer.ReadAll(out bytesRead);
 
+                    if (bytesRead == 0)
+                    {
+                        _isSending = false;
+                        return;
+                    }
+                }
+              
                 _sendEventArgs.SetBuffer(buffer, 0, bytesRead);
                 _isSending = true;
 
@@ -138,9 +172,7 @@ namespace BoltMQ.Core
             if (e.SocketError == SocketError.Success)
             {
                 _outgoingBuffer.Release(e.Buffer);
-
                 ISession session = (ISession)e.UserToken;
-
                 //Send any pending messages
                 session.FlushSendBuffer();
             }

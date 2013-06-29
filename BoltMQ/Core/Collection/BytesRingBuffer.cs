@@ -145,6 +145,12 @@ namespace BoltMQ.Core.Collection
         {
             int unreadBytes = UnreadBytes;
 
+            if (unreadBytes == 0)
+            {
+                bytesRead = 0;
+                return null;
+            }
+
             byte[] data = _bufferManager.TakeBuffer(unreadBytes);
 
             Read(data, 0, unreadBytes, out bytesRead);
