@@ -1,109 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{18A5CDB5-2AF6-4E58-AFDD-A93D657C539E}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BoltMQ</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>BoltMQ</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <RootNamespace>BoltMQ</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="protobuf-net, Version=2.0.0.621, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\protobuf-net.2.0.0.621\lib\net40\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Reactive.Core">
-      <HintPath>..\packages\Rx-Core.2.1.30214.0\lib\Net45\System.Reactive.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.Interfaces">
-      <HintPath>..\packages\Rx-Interfaces.2.1.30214.0\lib\Net45\System.Reactive.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.Linq">
-      <HintPath>..\packages\Rx-Linq.2.1.30214.0\lib\Net45\System.Reactive.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.PlatformServices">
-      <HintPath>..\packages\Rx-PlatformServices.2.1.30214.0\lib\Net45\System.Reactive.PlatformServices.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="protobuf-net" Version="3.1.29" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
+    <PackageReference Include="System.ServiceModel.Duplex" Version="4.8.1" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Core\AsyncClientSocket.cs" />
-    <Compile Include="Core\AsyncServerSocket.cs" />
-    <Compile Include="Core\AsyncSocket.cs" />
-    <Compile Include="Core\BufferPool.cs" />
-    <Compile Include="Core\Collection\RingBuffer.cs" />
-    <Compile Include="Core\Collection\RingBufferBase.cs" />
-    <Compile Include="Core\Collection\RingBufferItem.cs" />
-    <Compile Include="Core\Disposable.cs" />
-    <Compile Include="Core\Extentions.cs" />
-    <Compile Include="Core\Session.cs" />
-    <Compile Include="Core\Exceptions\BufferLengthException.cs" />
-    <Compile Include="Core\Exceptions\InCompleteBufferException.cs" />
-    <Compile Include="Core\Exceptions\NullBufferException.cs" />
-    <Compile Include="Core\Interfaces\IAsyncClientSocket.cs" />
-    <Compile Include="Core\Interfaces\IAsyncServerSocket.cs" />
-    <Compile Include="Core\Interfaces\IAsyncSocket.cs" />
-    <Compile Include="Core\Interfaces\IBufferPool.cs" />
-    <Compile Include="Core\Interfaces\ISession.cs" />
-    <Compile Include="Core\Interfaces\IMessageBroker.cs" />
-    <Compile Include="Core\Interfaces\IMessage.cs" />
-    <Compile Include="Core\Interfaces\IMessageProcessor.cs" />
-    <Compile Include="Core\Interfaces\ISerializer.cs" />
-    <Compile Include="Core\Interfaces\IStreamHandler.cs" />
-    <Compile Include="Core\BoltEventArgs.cs" />
-    <Compile Include="Core\Collection\BytesRingBuffer.cs" />
-    <Compile Include="Frame.cs" />
-    <Compile Include="FrameSegement.cs" />
-    <Compile Include="MessageAttribute.cs" />
-    <Compile Include="PayloadParser.cs" />
-    <Compile Include="Serializer.cs" />
-    <Compile Include="ClientSocket.cs" />
-    <Compile Include="ServerSocket.cs" />
-    <Compile Include="MessageBroker.cs" />
-    <Compile Include="ISubscribtion.cs" />
-    <Compile Include="MessageProcessor.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StreamBufferItem.cs" />
-    <Compile Include="StreamHandler.cs" />
-    <Compile Include="Subscription.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Core\App.config" />
-    <None Include="Core\Interfaces\Interfaces.cd" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
