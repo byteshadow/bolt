@@ -15,23 +15,11 @@ namespace BoltMQ
                 return;
 
             var type = typeof(T);
-            Subscription<T> subscription;
 
-            if (!_subscribtions.ContainsKey(type))
-            {
-                subscription = new Subscription<T>();
-                _subscribtions.TryAdd(type, subscription);
-            }
-            else
-            {
-                subscription = _subscribtions[type] as Subscription<T>;
-
-                if (subscription == null)
-                {
-                    subscription = new Subscription<T>();
-                    _subscribtions.TryAdd(type, subscription);
-                }
-            }
+            // Use GetOrAdd to avoid race conditions when multiple threads
+            // attempt to register handlers for the same message type.
+            var subscription = (Subscription<T>)_subscribtions.GetOrAdd(
+                type, _ => new Subscription<T>());
 
             subscription.MessageReceived += messageHandler;
         }
